@@ -1,6 +1,7 @@
 package com.board.boardbackend.controller;
 
 import com.board.boardbackend.domain.Article;
+import com.board.boardbackend.dto.ArticleResponseDto;
 import com.board.boardbackend.service.ArticleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,44 +17,35 @@ public class ArticleController {
     private final ArticleService articleService;
 
     @GetMapping
-    public ResponseEntity<List<Article>> getAllArticles() {
+    public ResponseEntity<List<ArticleResponseDto>> getAllArticles() {
         List<Article> articles = articleService.findAllArticles();
-        return ResponseEntity.ok(articles);
+        List<ArticleResponseDto> articleDtos = articles.stream()
+                .map(ArticleResponseDto::new)
+                .toList();
+        return ResponseEntity.ok(articleDtos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Article> getArticleById(@PathVariable Long id) {
-        try {
-            Article article = articleService.findArticleById(id);
-            return ResponseEntity.ok(article);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<ArticleResponseDto> getArticleById(@PathVariable Long id) {
+        Article article = articleService.findArticleById(id);
+        return ResponseEntity.ok(new ArticleResponseDto(article));
     }
 
     @PostMapping
-    public ResponseEntity<Article> createArticle(@RequestBody Article article) {
+    public ResponseEntity<ArticleResponseDto> createArticle(@RequestBody Article article) {
         Article savedArticle = articleService.saveArticle(article);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedArticle);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ArticleResponseDto(savedArticle));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Article> updateArticle(@PathVariable Long id, @RequestBody Article article) {
-        try {
-            Article updatedArticle = articleService.updateArticle(id, article);
-            return ResponseEntity.ok(updatedArticle);
-        }  catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<ArticleResponseDto> updateArticle(@PathVariable Long id, @RequestBody Article article) {
+        Article updatedArticle = articleService.updateArticle(id, article);
+        return ResponseEntity.ok(new ArticleResponseDto(updatedArticle));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Article> deleteArticleById(@PathVariable Long id) {
-        try {
-            articleService.deleteArticleById(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> deleteArticleById(@PathVariable Long id) {
+        articleService.deleteArticleById(id);
+        return ResponseEntity.noContent().build();
     }
 }
