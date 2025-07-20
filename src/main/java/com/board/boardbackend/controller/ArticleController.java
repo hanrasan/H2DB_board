@@ -4,11 +4,13 @@ import com.board.boardbackend.domain.Article;
 import com.board.boardbackend.dto.ArticleResponseDto;
 import com.board.boardbackend.service.ArticleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/articles")
@@ -17,12 +19,13 @@ public class ArticleController {
     private final ArticleService articleService;
 
     @GetMapping
-    public ResponseEntity<List<ArticleResponseDto>> getAllArticles() {
-        List<Article> articles = articleService.findAllArticles();
-        List<ArticleResponseDto> articleDtos = articles.stream()
-                .map(ArticleResponseDto::new)
-                .toList();
-        return ResponseEntity.ok(articleDtos);
+    public ResponseEntity<Page<ArticleResponseDto>> getAllArticles(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            ) {
+        Page<Article> articlePage = articleService.findAllArticles(keyword, pageable);
+        Page<ArticleResponseDto> articleDtoPage = articlePage.map(ArticleResponseDto::new);
+        return ResponseEntity.ok(articleDtoPage);
     }
 
     @GetMapping("/{id}")

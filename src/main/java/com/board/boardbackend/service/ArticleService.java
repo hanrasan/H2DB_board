@@ -5,11 +5,11 @@ import com.board.boardbackend.exception.ApiException;
 import com.board.boardbackend.repository.ArticleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
@@ -18,8 +18,12 @@ public class ArticleService {
 
     private final ArticleRepository articleRepository;
 
-    public List<Article> findAllArticles() {
-        return articleRepository.findAll();
+    public Page<Article> findAllArticles(String keyword, Pageable pageable) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return articleRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword, pageable);
+        } else {
+            return articleRepository.findAll(pageable);
+        }
     }
 
     public Article findArticleById(Long id) {
