@@ -1,6 +1,8 @@
 package com.board.boardbackend.service;
 
 import com.board.boardbackend.domain.Article;
+import com.board.boardbackend.domain.User;
+import com.board.boardbackend.domain.UserRoleEnum;
 import com.board.boardbackend.exception.ApiException;
 import com.board.boardbackend.repository.ArticleRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,23 +35,32 @@ public class ArticleService {
     }
 
     @Transactional
-    public Article saveArticle(Article article) {
-        return articleRepository.save(article);
+    public Article saveArticle(Article article, User user) {
+        Article newArticle = new Article(article.getTitle(), article.getContent(), user);
+        return articleRepository.save(newArticle);
     }
 
     @Transactional
-    public void deleteArticleById(Long id) {
-        if (!articleRepository.existsById(id)) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "Article not found with id: " + id);
+    public void deleteArticleById(Long id, User user) {
+        Article articleToDelete = articleRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Article not found with id: " + id));
+
+        if (!articleToDelete.getUser().getId().equals(user.getId()) && user.getRole() != UserRoleEnum.ADMIN) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "게시글을 삭제할 권한이 없습니다.");
         }
+
         articleRepository.deleteById(id);
     }
 
     @Transactional
-    public Article updateArticle(Long id, Article updatedArticle) {
+    public Article updateArticle(Long id, Article updatedArticle, User user) {
         Article existingArticle = articleRepository.findById(id).orElseThrow(
                 () -> new ApiException(HttpStatus.NOT_FOUND, "Article not found with id: " + id)
         );
+
+        if (!existingArticle.getUser().getId().equals(user.getId()) && user.getRole() != UserRoleEnum.ADMIN) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "게시글을 수정할 권한이 없습니다.");
+        }
 
         existingArticle.setTitle(updatedArticle.getTitle());
         existingArticle.setContent(updatedArticle.getContent());
